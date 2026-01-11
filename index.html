@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,29 +13,35 @@
         /* Styles pour le Mode Sombre */
         body {
             font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #121212; /* Fond très sombre */
-            color: #e0e0e0; /* Texte clair */
+            background-color: #121212;
+            /* Fond très sombre */
+            color: #e0e0e0;
+            /* Texte clair */
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
         }
+
         .container {
-            background: #1e1e1e; /* Fond du panneau */
+            background: #1e1e1e;
+            /* Fond du panneau */
             padding: 2.5rem;
             border-radius: 16px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
             width: 90%;
             max-width: 500px;
             border: 1px solid #333;
         }
-        h2 { 
-            color: #ffffff; 
-            text-align: center; 
+
+        h2 {
+            color: #ffffff;
+            text-align: center;
             margin-top: 0;
             font-weight: 300;
         }
+
         textarea {
             width: 100%;
             height: 150px;
@@ -49,13 +56,17 @@
             margin-bottom: 1.5rem;
             outline: none;
         }
+
         textarea:focus {
-            border-color: #bb86fc; /* Couleur accentuée au focus */
+            border-color: #bb86fc;
+            /* Couleur accentuée au focus */
         }
+
         .buttons {
             display: flex;
             gap: 12px;
         }
+
         button {
             flex: 1;
             padding: 12px;
@@ -67,21 +78,31 @@
             letter-spacing: 1px;
             transition: transform 0.1s, background 0.3s;
         }
+
         button:active {
             transform: scale(0.98);
         }
-        .btn-encode { 
-            background-color: #bb86fc; /* Violet type Material Design Dark */
-            color: #000; 
+
+        .btn-encode {
+            background-color: #bb86fc;
+            /* Violet type Material Design Dark */
+            color: #000;
         }
-        .btn-encode:hover { background-color: #a370db; }
-        
-        .btn-decode { 
-            background-color: #03dac6; /* Cyan type Material Design Dark */
-            color: #000; 
+
+        .btn-encode:hover {
+            background-color: #a370db;
         }
-        .btn-decode:hover { background-color: #01b0a1; }
-        
+
+        .btn-decode {
+            background-color: #03dac6;
+            /* Cyan type Material Design Dark */
+            color: #000;
+        }
+
+        .btn-decode:hover {
+            background-color: #01b0a1;
+        }
+
         .result-area {
             margin-top: 2rem;
             padding: 15px;
@@ -90,12 +111,14 @@
             border-left: 4px solid #bb86fc;
             word-break: break-all;
         }
+
         .result-label {
             font-size: 0.8rem;
             color: #888;
             margin-bottom: 5px;
             display: block;
         }
+
         #outputResult {
             margin: 0;
             font-family: 'Courier New', Courier, monospace;
@@ -103,53 +126,96 @@
         }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h2>Base64 Tool</h2>
-    <textarea id="inputText" placeholder="Collez votre texte ici..."></textarea>
-    
-    <div class="buttons">
-        <button class="btn-encode" onclick="processBase64('encode')">Encoder</button>
-        <button class="btn-decode" onclick="processBase64('decode')">Décoder</button>
+    <div class="container">
+        <h2>Base64 Tool</h2>
+        <textarea id="inputText" placeholder="Collez votre texte ici..."></textarea>
+
+        <div class="buttons">
+            <button class="btn-encode" onclick="processBase64('encode')">Encoder</button>
+            <button class="btn-decode" onclick="processBase64('decode')">Décoder</button>
+        </div>
+
+        <div class="result-area">
+            <span class="result-label">RÉSULTAT</span>
+            <p id="outputResult">En attente d'action...</p>
+            <button id="openLinkBtn" onclick="openResultUrl()"
+                style="display: none; margin-top: 10px; background-color: #03dac6; color: #000; font-size: 0.8rem; padding: 5px 10px;">
+                🌍 Ouvrir le lien
+            </button>
+        </div>
     </div>
 
-    <div class="result-area">
-        <span class="result-label">RÉSULTAT</span>
-        <p id="outputResult">En attente d'action...</p>
-    </div>
-</div>
+    <script>
+        function processBase64(action) {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputResult');
 
-<script>
-    function processBase64(action) {
-        const input = document.getElementById('inputText').value.trim();
-        const output = document.getElementById('outputResult');
-
-        if (!input) {
-            output.style.color = "#ff6b6b";
-            output.innerText = "Champ vide !";
-            return;
-        }
-
-        try {
-            if (action === 'encode') {
-                output.style.color = "#03dac6";
-                output.innerText = btoa(input);
-            } else {
-                output.style.color = "#03dac6";
-                output.innerText = atob(input);
+            if (!input) {
+                output.style.color = "#ff6b6b";
+                output.innerText = "Champ vide !";
+                return;
             }
-        } catch (e) {
-            output.style.color = "#ff6b6b";
-            output.innerText = "Erreur : Code Base64 invalide.";
+
+            try {
+                if (action === 'encode') {
+                    output.style.color = "#03dac6";
+                    output.innerText = btoa(input);
+                } else {
+                    output.style.color = "#03dac6";
+                    output.innerText = atob(input);
+                }
+            } catch (e) {
+                output.style.color = "#ff6b6b";
+                output.innerText = "Erreur : Code Base64 invalide.";
+            }
         }
-    }
-</script>
+        function processBase64(action) {
+            const input = document.getElementById('inputText').value.trim();
+            const output = document.getElementById('outputResult');
+            const openBtn = document.getElementById('openLinkBtn');
+
+            if (!input) {
+                output.style.color = "#ff6b6b";
+                output.innerText = "Champ vide !";
+                openBtn.style.display = "none";
+                return;
+            }
+
+            try {
+                let result = "";
+                if (action === 'encode') {
+                    result = btoa(input);
+                } else {
+                    result = atob(input);
+                }
+
+                output.style.color = "#03dac6";
+                output.innerText = result;
+
+                // --- Logique pour afficher le bouton de lien ---
+                if (result.startsWith('http://') || result.startsWith('https://')) {
+                    openBtn.style.display = "inline-block";
+                } else {
+                    openBtn.style.display = "none";
+                }
+
+            } catch (e) {
+                output.style.color = "#ff6b6b";
+                output.innerText = "Erreur : Format invalide.";
+                openBtn.style.display = "none";
+            }
+        }
+
+        // Fonction pour ouvrir le lien
+        function openResultUrl() {
+            const url = document.getElementById('outputResult').innerText;
+            window.open(url, '_blank'); // '_blank' ouvre dans un nouvel onglet
+        }
+    </script>
 
 </body>
+
 </html>
-
-
-
-
-
