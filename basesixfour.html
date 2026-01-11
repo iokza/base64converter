@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Base64 Converter - Dark Edition</title>
+    <style>
+        /* Styles pour le Mode Sombre */
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #121212; /* Fond très sombre */
+            color: #e0e0e0; /* Texte clair */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: #1e1e1e; /* Fond du panneau */
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            width: 90%;
+            max-width: 500px;
+            border: 1px solid #333;
+        }
+        h2 { 
+            color: #ffffff; 
+            text-align: center; 
+            margin-top: 0;
+            font-weight: 300;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 12px;
+            background-color: #252525;
+            color: #fff;
+            border: 1px solid #444;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 15px;
+            resize: none;
+            margin-bottom: 1.5rem;
+            outline: none;
+        }
+        textarea:focus {
+            border-color: #bb86fc; /* Couleur accentuée au focus */
+        }
+        .buttons {
+            display: flex;
+            gap: 12px;
+        }
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: transform 0.1s, background 0.3s;
+        }
+        button:active {
+            transform: scale(0.98);
+        }
+        .btn-encode { 
+            background-color: #bb86fc; /* Violet type Material Design Dark */
+            color: #000; 
+        }
+        .btn-encode:hover { background-color: #a370db; }
+        
+        .btn-decode { 
+            background-color: #03dac6; /* Cyan type Material Design Dark */
+            color: #000; 
+        }
+        .btn-decode:hover { background-color: #01b0a1; }
+        
+        .result-area {
+            margin-top: 2rem;
+            padding: 15px;
+            background: #2c2c2c;
+            border-radius: 8px;
+            border-left: 4px solid #bb86fc;
+            word-break: break-all;
+        }
+        .result-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 5px;
+            display: block;
+        }
+        #outputResult {
+            margin: 0;
+            font-family: 'Courier New', Courier, monospace;
+            color: #03dac6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Base64 Tool</h2>
+    <textarea id="inputText" placeholder="Collez votre texte ici..."></textarea>
+    
+    <div class="buttons">
+        <button class="btn-encode" onclick="processBase64('encode')">Encoder</button>
+        <button class="btn-decode" onclick="processBase64('decode')">Décoder</button>
+    </div>
+
+    <div class="result-area">
+        <span class="result-label">RÉSULTAT</span>
+        <p id="outputResult">En attente d'action...</p>
+    </div>
+</div>
+
+<script>
+    function processBase64(action) {
+        const input = document.getElementById('inputText').value.trim();
+        const output = document.getElementById('outputResult');
+
+        if (!input) {
+            output.style.color = "#ff6b6b";
+            output.innerText = "Champ vide !";
+            return;
+        }
+
+        try {
+            if (action === 'encode') {
+                output.style.color = "#03dac6";
+                output.innerText = btoa(input);
+            } else {
+                output.style.color = "#03dac6";
+                output.innerText = atob(input);
+            }
+        } catch (e) {
+            output.style.color = "#ff6b6b";
+            output.innerText = "Erreur : Code Base64 invalide.";
+        }
+    }
+</script>
+
+</body>
+</html>
