@@ -1,0 +1,1806 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Online Fix Checker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0a0a0f;
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(25, 60, 120, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 20%, rgba(120, 25, 80, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 80%, rgba(25, 120, 100, 0.1) 0%, transparent 50%);
+            z-index: -1;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgPulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .header h1 {
+            font-size: 2.8em;
+            font-weight: 800;
+            background: linear-gradient(135deg, #66c0f4, #4a9eda, #c084fc, #66c0f4);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 4s ease infinite;
+            margin-bottom: 10px;
+        }
+
+        .header h1 .emoji {
+            -webkit-text-fill-color: initial;
+            background: none;
+            -webkit-background-clip: initial;
+            background-clip: initial;
+        }
+
+        @keyframes gradientShift {
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+        }
+
+        .header p {
+            color: #8899a6;
+            font-size: 1.1em;
+        }
+
+        .search-wrapper {
+            display: flex;
+            align-items: center;
+            background: rgba(22, 27, 34, 0.9);
+            border: 2px solid rgba(102, 192, 244, 0.2);
+            border-radius: 16px;
+            padding: 6px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-bottom: 16px;
+            position: relative;
+        }
+
+        .search-wrapper:focus-within {
+            border-color: rgba(102, 192, 244, 0.6);
+            box-shadow: 0 0 30px rgba(102, 192, 244, 0.15);
+        }
+
+        .search-icon {
+            padding: 12px 16px;
+            color: #66c0f4;
+        }
+
+        .search-icon svg {
+            width: 24px;
+            height: 24px;
+            display: block;
+        }
+
+        #searchInput {
+            flex: 1;
+            background: none;
+            border: none;
+            color: #e0e0e0;
+            font-size: 1.15em;
+            padding: 14px 10px;
+            outline: none;
+        }
+
+        #searchInput::placeholder {
+            color: #4a5568;
+        }
+
+        .search-btn {
+            background: linear-gradient(135deg, #66c0f4, #4a9eda);
+            border: none;
+            color: #0a0a0f;
+            font-weight: 700;
+            font-size: 1em;
+            padding: 14px 22px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .search-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 20px rgba(102, 192, 244, 0.4);
+        }
+
+        .search-btn.secondary {
+            background: linear-gradient(135deg, #1e293b, #334155);
+            color: #e0e0e0;
+            margin-left: 6px;
+        }
+
+        .search-btn.secondary:hover {
+            background: linear-gradient(135deg, #334155, #475569);
+        }
+
+        /* SteamDB Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        .modal {
+            background: #0f1419;
+            border: 1px solid rgba(102, 192, 244, 0.2);
+            border-radius: 20px;
+            width: 100%;
+            max-width: 700px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+            box-shadow: 0 20px 80px rgba(0, 0, 0, 0.6);
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-header h3 {
+            font-size: 1.2em;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-header .source-badge {
+            background: rgba(102, 192, 244, 0.15);
+            color: #66c0f4;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.7em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .modal-close {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            color: #e0e0e0;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.2em;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+        }
+
+        .modal-body {
+            padding: 16px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .modal-loader {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6b7280;
+        }
+
+        .modal-loader .spinner {
+            margin: 0 auto 16px;
+        }
+
+        .loader {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(102, 192, 244, 0.1);
+            border-left-color: #66c0f4;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        .spinner-sm {
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(102, 192, 244, 0.1);
+            border-left-color: #66c0f4;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 10px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loader p {
+            color: #8899a6;
+        }
+
+        .results-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .game-card {
+            display: flex;
+            align-items: center;
+            background: rgba(22, 27, 34, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 14px 18px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .game-card:hover {
+            background: rgba(30, 38, 50, 0.95);
+            border-color: rgba(102, 192, 244, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        .game-card img {
+            width: 120px;
+            height: 45px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .game-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .game-info h3 {
+            font-size: 1.05em;
+            color: #e0e0e0;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .game-info .game-meta {
+            font-size: 0.8em;
+            color: #6b7280;
+        }
+
+        .game-card .arrow {
+            color: #4a5568;
+            font-size: 1.2em;
+            transition: all 0.3s;
+        }
+
+        .game-card:hover .arrow {
+            color: #66c0f4;
+            transform: translateX(4px);
+        }
+
+        /* Modal game card - compact */
+        .modal .game-card {
+            padding: 10px 14px;
+            margin-bottom: 8px;
+        }
+
+        .modal .game-card img {
+            width: 90px;
+            height: 34px;
+        }
+
+        .modal .game-card h3 {
+            font-size: 0.95em;
+        }
+
+        .source-tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 5px;
+            font-size: 0.7em;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-left: 8px;
+        }
+
+        .source-tag.steam {
+            background: rgba(102, 192, 244, 0.15);
+            color: #66c0f4;
+        }
+
+        .source-tag.steamdb {
+            background: rgba(192, 132, 252, 0.15);
+            color: #c084fc;
+        }
+
+        .detail-panel {
+            display: none;
+            background: rgba(16, 20, 28, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 20px;
+            overflow: hidden;
+            backdrop-filter: blur(20px);
+            animation: slideUp 0.4s ease;
+        }
+
+        .detail-header {
+            position: relative;
+            padding: 30px;
+            display: flex;
+            align-items: flex-start;
+            gap: 24px;
+        }
+
+        .detail-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 200px;
+            background: linear-gradient(180deg, rgba(102, 192, 244, 0.08), transparent);
+            pointer-events: none;
+        }
+
+        .detail-cover {
+            width: 200px;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            z-index: 1;
+            flex-shrink: 0;
+        }
+
+        .detail-title-section {
+            z-index: 1;
+            flex: 1;
+            padding-top: 10px;
+        }
+
+        .detail-title-section h2 {
+            font-size: 2em;
+            font-weight: 700;
+            color: #fff;
+            margin-bottom: 8px;
+        }
+
+        .detail-title-section .detail-meta {
+            color: #6b7280;
+            font-size: 0.95em;
+        }
+
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s;
+            z-index: 2;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .detail-body {
+            padding: 0 30px 30px;
+        }
+
+        .detail-description {
+            color: #9ca3af;
+            font-size: 0.95em;
+            line-height: 1.6;
+            margin-bottom: 24px;
+            max-height: 80px;
+            overflow: hidden;
+        }
+
+        .categories-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 28px;
+        }
+
+        .cat-tag {
+            background: rgba(102, 192, 244, 0.1);
+            color: #66c0f4;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            border: 1px solid rgba(102, 192, 244, 0.15);
+        }
+
+        .cat-tag.multiplayer {
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 14px;
+            padding: 22px;
+        }
+
+        .status-card h4 {
+            font-size: 0.85em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #6b7280;
+            margin-bottom: 14px;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 10px;
+        }
+
+        .status-dot {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .status-dot.green {
+            background: #22c55e;
+            box-shadow: 0 0 12px rgba(34, 197, 94, 0.5);
+        }
+
+        .status-dot.red {
+            background: #ef4444;
+            box-shadow: 0 0 12px rgba(239, 68, 68, 0.5);
+        }
+
+        .status-dot.yellow {
+            background: #f59e0b;
+            box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+        }
+
+        .status-text {
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .status-text.green {
+            color: #22c55e;
+        }
+
+        .status-text.red {
+            color: #ef4444;
+        }
+
+        .status-text.yellow {
+            color: #f59e0b;
+        }
+
+        .status-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: #66c0f4;
+            text-decoration: none;
+            font-size: 0.9em;
+            margin-top: 8px;
+            padding: 8px 16px;
+            background: rgba(102, 192, 244, 0.08);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .status-link:hover {
+            background: rgba(102, 192, 244, 0.15);
+        }
+
+        .online-features {
+            background: rgba(102, 192, 244, 0.05);
+            border: 1px solid rgba(102, 192, 244, 0.1);
+            border-radius: 12px;
+            padding: 18px;
+            margin-bottom: 20px;
+        }
+
+        .online-features h4 {
+            color: #66c0f4;
+            margin-bottom: 10px;
+            font-size: 0.95em;
+        }
+
+        .online-features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .online-features li {
+            padding: 6px 0;
+            color: #9ca3af;
+            font-size: 0.9em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .online-features li::before {
+            content: '✓';
+            color: #34d399;
+            font-weight: bold;
+        }
+
+        .notice {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.2);
+            color: #fbbf24;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 0.85em;
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #4a5568;
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .empty-state h3 {
+            font-size: 1.2em;
+            margin-bottom: 8px;
+            color: #6b7280;
+        }
+
+        .error-msg {
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            color: #fca5a5;
+            padding: 16px 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        /* DRM */
+        .drm-card {
+            border-width: 2px;
+        }
+
+        .drm-card-green {
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .drm-card-yellow {
+            border-color: rgba(245, 158, 11, 0.3);
+        }
+
+        .drm-card-red {
+            border-color: rgba(239, 68, 68, 0.4);
+            background: rgba(239, 68, 68, 0.04);
+        }
+
+        .drm-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 14px;
+        }
+
+        .drm-tag {
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85em;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .drm-tag.drm-high {
+            background: rgba(239, 68, 68, 0.12);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.25);
+        }
+
+        .drm-tag.drm-medium {
+            background: rgba(245, 158, 11, 0.12);
+            color: #fcd34d;
+            border: 1px solid rgba(245, 158, 11, 0.25);
+        }
+
+        .drm-tag.drm-low {
+            background: rgba(102, 192, 244, 0.1);
+            color: #66c0f4;
+            border: 1px solid rgba(102, 192, 244, 0.2);
+        }
+
+        .drm-notice {
+            margin-top: 14px;
+            padding: 12px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border-left: 3px solid #66c0f4;
+            border-radius: 6px;
+            font-size: 0.88em;
+            color: #c0c5cb;
+            line-height: 1.5;
+        }
+
+        .drm-action {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-top: 16px;
+            padding: 16px 18px;
+            border-radius: 12px;
+            border: 1px solid;
+        }
+
+        .drm-action-icon {
+            font-size: 1.8em;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+
+        .drm-action-content {
+            flex: 1;
+        }
+
+        .drm-action-content strong {
+            display: block;
+            font-size: 1em;
+            margin-bottom: 6px;
+        }
+
+        .drm-action-content p {
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin: 0;
+            color: #c0c5cb;
+        }
+
+        .drm-action-content code {
+            background: rgba(0, 0, 0, 0.4);
+            padding: 2px 8px;
+            border-radius: 6px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #66c0f4;
+            border: 1px solid rgba(102, 192, 244, 0.2);
+        }
+
+        .drm-action-content a {
+            color: #66c0f4;
+            text-decoration: none;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(102, 192, 244, 0.3);
+            transition: all 0.2s;
+        }
+
+        .drm-action-content a:hover {
+            color: #4a9eda;
+            border-bottom-color: #4a9eda;
+        }
+
+        .drm-action-denuvo {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08), rgba(245, 158, 11, 0.05));
+            border-color: rgba(239, 68, 68, 0.25);
+        }
+
+        .drm-action-denuvo strong {
+            color: #fca5a5;
+        }
+
+        .drm-action-other {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.06), rgba(102, 192, 244, 0.05));
+            border-color: rgba(245, 158, 11, 0.2);
+        }
+
+        .drm-action-other strong {
+            color: #fcd34d;
+        }
+
+        .steamdb-flow {
+            padding: 8px;
+        }
+
+        .flow-step {
+            display: flex;
+            gap: 16px;
+            padding: 18px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .flow-step:last-child {
+            border-bottom: none;
+        }
+
+        .flow-step-num {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #66c0f4, #c084fc);
+            color: #0a0a0f;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.1em;
+        }
+
+        .flow-step-content {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .flow-step-content h4 {
+            color: #fff;
+            font-size: 1em;
+            margin-bottom: 8px;
+        }
+
+        .flow-step-content p {
+            color: #9ca3af;
+            font-size: 0.9em;
+            line-height: 1.5;
+            margin-bottom: 12px;
+        }
+
+        .flow-step-content code {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #66c0f4;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85em;
+        }
+
+        .flow-step-content code strong {
+            color: #c084fc;
+        }
+
+        .btn-primary {
+            display: inline-block;
+            background: linear-gradient(135deg, #66c0f4, #4a9eda);
+            color: #0a0a0f;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 700;
+            font-size: 0.95em;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.25s;
+        }
+
+        .btn-primary:hover {
+            transform: scale(1.03);
+            box-shadow: 0 4px 16px rgba(102, 192, 244, 0.35);
+        }
+
+        .appid-input-wrapper {
+            display: flex;
+            gap: 8px;
+            align-items: stretch;
+        }
+
+        .appid-input-wrapper input {
+            flex: 1;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #e0e0e0;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 0.95em;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .appid-input-wrapper input:focus {
+            border-color: rgba(102, 192, 244, 0.6);
+            background: rgba(0, 0, 0, 0.6);
+        }
+
+        .appid-error {
+            color: #fca5a5;
+            font-size: 0.85em;
+            margin-top: 8px;
+            min-height: 1em;
+        }
+
+        @media (max-width: 640px) {
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            .detail-header {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .detail-cover {
+                width: 160px;
+            }
+
+            .search-btn span {
+                display: none;
+            }
+
+            .game-card img {
+                width: 80px;
+                height: 30px;
+            }
+
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0a0a0f;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #2a2a3a;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="emoji">🎮</span> Online Fix Checker</h1>
+            <p>Cherche un jeu Steam — vérifie Online-Fix.me & Ryuu Fixes</p>
+        </div>
+
+        <div class="search-wrapper">
+            <div class="search-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8" />
+                    <path d="m21 21-4.35-4.35" />
+                </svg>
+            </div>
+            <input type="text" id="searchInput" placeholder="Rechercher un jeu Steam...">
+            <button class="search-btn" id="searchBtn">
+                <span>Rechercher</span>
+            </button>
+            <button class="search-btn secondary" id="steamdbBtn" title="Rechercher via SteamDB">
+                <span>🔍 SteamDB</span>
+            </button>
+        </div>
+
+        <div class="loader" id="loader">
+            <div class="spinner"></div>
+            <p>Recherche en cours...</p>
+        </div>
+
+        <div id="results" class="results-grid"></div>
+        <div id="detailPanel" class="detail-panel"></div>
+    </div>
+
+    <!-- SteamDB Modal -->
+    <div class="modal-overlay" id="steamdbModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h3>
+                    🔍 Recherche via SteamDB
+                    <span class="source-badge">SteamDB</span>
+                </h3>
+                <button class="modal-close" id="modalClose">✕</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Rempli dynamiquement -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ===== CORS proxy fetch =====
+        const PROXIES = [
+            url => 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+            url => 'https://corsproxy.io/?' + encodeURIComponent(url),
+            url => 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url),
+        ];
+
+        async function proxyFetch(url) {
+            for (const makeUrl of PROXIES) {
+                try {
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 12000);
+                    const r = await fetch(makeUrl(url), { signal: controller.signal });
+                    clearTimeout(timer);
+                    if (r.ok) return await r.text();
+                } catch (_) { }
+            }
+            throw new Error('All proxies failed');
+        }
+
+        // ===== Steam Search =====
+        async function searchSteam(query) {
+            const url = 'https://store.steampowered.com/api/storesearch/?term=' +
+                encodeURIComponent(query) + '&l=english&cc=us';
+            try {
+                const text = await proxyFetch(url);
+                const items = JSON.parse(text).items || [];
+
+                const excludedTypes = ['dlc', 'music', 'demo', 'video', 'mod', 'hardware'];
+
+                return items.filter(item => {
+                    if (item.type && excludedTypes.includes(item.type.toLowerCase())) return false;
+                    const name = (item.name || '').toLowerCase();
+                    const blacklist = [
+                        ' dlc', '- dlc', 'dlc ', '(dlc)',
+                        'supporter pack', 'season pass',
+                        'soundtrack', ' ost', '- ost', '(ost)',
+                        'expansion pass',
+                        'character pack', 'skin pack',
+                        'beta test',
+                        'upgrade pack', 'deluxe upgrade', 'premium upgrade',
+                        'cosmetic pack',
+                        ' - artbook', 'art book'
+                    ];
+                    if (blacklist.some(kw => name.includes(kw))) return false;
+                    return true;
+                });
+            } catch (e) {
+                console.error('Steam search error:', e);
+                return [];
+            }
+        }
+
+        // ===== SteamDB Search =====
+        async function searchSteamDB(query) {
+            const url = 'https://steamdb.info/search/?a=app&q=' + encodeURIComponent(query) + '&type=1&category=0';
+            try {
+                const html = await proxyFetch(url);
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                const results = [];
+                const seen = new Set();
+
+                // SteamDB utilise une table avec des liens vers /app/<id>/
+                const rows = doc.querySelectorAll('a.app, tr.app, .table-products a[href*="/app/"]');
+
+                rows.forEach(el => {
+                    // Récupérer l'App ID depuis l'URL ou un data attribute
+                    const href = el.getAttribute('href') || '';
+                    const appIdMatch = href.match(/\/app\/(\d+)/);
+                    const appId = appIdMatch ? appIdMatch[1] : el.getAttribute('data-appid');
+
+                    if (!appId) return;
+                    if (seen.has(appId)) return;
+                    seen.add(appId);
+
+                    // Trouver le nom du jeu
+                    let name = '';
+                    const nameEl = el.querySelector('.text-left, td:nth-child(3), .span6, .b') ||
+                        el.parentElement?.querySelector('.text-left, td:nth-child(3)');
+                    if (nameEl) {
+                        name = nameEl.textContent.trim();
+                    } else {
+                        name = el.textContent.trim().replace(/\s+/g, ' ');
+                    }
+
+                    // Type (app, dlc, demo, etc.)
+                    const typeEl = el.querySelector('td:nth-child(2), .muted') ||
+                        el.parentElement?.querySelector('td:nth-child(2)');
+                    const type = typeEl ? typeEl.textContent.trim().toLowerCase() : 'app';
+
+                    if (name && name.length > 0 && name.length < 200) {
+                        results.push({
+                            id: parseInt(appId),
+                            name: name,
+                            type: type,
+                            source: 'steamdb'
+                        });
+                    }
+                });
+
+                // Fallback : chercher tous les liens vers /app/<id>/ dans la page
+                if (results.length === 0) {
+                    const links = doc.querySelectorAll('a[href*="/app/"]');
+                    links.forEach(a => {
+                        const href = a.getAttribute('href') || '';
+                        const appIdMatch = href.match(/\/app\/(\d+)/);
+                        if (!appIdMatch) return;
+                        const appId = appIdMatch[1];
+                        if (seen.has(appId)) return;
+                        seen.add(appId);
+
+                        const name = a.textContent.trim().replace(/\s+/g, ' ');
+                        if (name && name.length > 2 && name.length < 200 && !name.match(/^\d+$/)) {
+                            results.push({
+                                id: parseInt(appId),
+                                name: name,
+                                type: 'app',
+                                source: 'steamdb'
+                            });
+                        }
+                    });
+                }
+
+                // Filtre DLC
+                return results.filter(r => {
+                    const n = r.name.toLowerCase();
+                    if (r.type === 'dlc' || r.type === 'music' || r.type === 'demo') return false;
+                    if (n.includes(' dlc') || n.includes('soundtrack') || n.includes(' ost')) return false;
+                    return true;
+                }).slice(0, 25);
+
+            } catch (e) {
+                console.error('SteamDB search error:', e);
+                throw e;
+            }
+        }
+
+        // ===== Steam Details =====
+        async function getSteamDetails(appId) {
+            const url = 'https://store.steampowered.com/api/appdetails?appids=' + appId + '&l=english';
+            try {
+                const text = await proxyFetch(url);
+                const data = JSON.parse(text);
+                return data[appId]?.data || null;
+            } catch (e) {
+                console.error('Steam details error:', e);
+                return null;
+            }
+        }
+
+        // ===== Online-Fix search =====
+        async function searchOnlineFix(gameName) {
+            try {
+                const url = 'https://online-fix.me/index.php?do=search&subaction=search&story=' +
+                    encodeURIComponent(gameName);
+                const html = await proxyFetch(url);
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+
+                const results = [];
+                const seen = new Set();
+
+                const normalize = s => (s || '').toLowerCase()
+                    .replace(/[®™©]/g, '')
+                    .replace(/[^\w\s]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+
+                const normalizedQuery = normalize(gameName);
+                const queryWords = normalizedQuery.split(' ').filter(w => w.length > 2);
+
+                const articleSelectors = [
+                    'article', '.news', '.news-item', '.shortstory', '.short-story',
+                    '.news-block', '#dle-content article', '#dle-content .news'
+                ];
+
+                let articles = [];
+                for (const sel of articleSelectors) {
+                    const found = doc.querySelectorAll(sel);
+                    if (found.length > 0) { articles = Array.from(found); break; }
+                }
+
+                function addResult(href, title) {
+                    let fullHref = href;
+                    if (!fullHref.startsWith('http')) {
+                        fullHref = 'https://online-fix.me' + (href.startsWith('/') ? '' : '/') + href;
+                    }
+                    fullHref = fullHref.split('#')[0];
+
+                    if (seen.has(fullHref)) return;
+                    seen.add(fullHref);
+
+                    const normalizedTitle = normalize(title);
+                    const matchedWords = queryWords.filter(w => normalizedTitle.includes(w));
+                    const score = matchedWords.length;
+                    const ratio = queryWords.length > 0 ? score / queryWords.length : 0;
+
+                    results.push({ url: fullHref, title, score, ratio });
+                }
+
+                if (articles.length === 0) {
+                    const titles = doc.querySelectorAll('#dle-content h2 a, #dle-content h3 a, .content h2 a, .content h3 a, main h2 a, main h3 a');
+                    titles.forEach(a => {
+                        const href = a.getAttribute('href') || '';
+                        const title = (a.textContent || '').trim();
+                        if (href.includes('/games/') && !href.includes('#comment') && title.length > 3) {
+                            addResult(href, title);
+                        }
+                    });
+                } else {
+                    articles.forEach(art => {
+                        const titleLink = art.querySelector('h1 a, h2 a, h3 a, .title a, .news-title a, [class*="title"] a');
+                        if (!titleLink) return;
+                        const href = titleLink.getAttribute('href') || '';
+                        const title = (titleLink.textContent || '').trim();
+                        if (!href.includes('/games/')) return;
+                        if (href.includes('#comment')) return;
+                        if (title.length < 3 || title.length > 200) return;
+                        addResult(href, title);
+                    });
+                }
+
+                const filtered = results.filter(r => r.ratio >= 0.6 && r.score >= 1);
+                filtered.sort((a, b) => b.ratio - a.ratio || b.score - a.score);
+                return filtered.slice(0, 5);
+
+            } catch (e) {
+                console.error('OnlineFix error:', e);
+                return null;
+            }
+        }
+
+        // ===== Ryuu Fixes search =====
+        async function searchRyuuFixes(gameName) {
+            try {
+                const html = await proxyFetch('https://generator.ryuu.lol/fixes');
+                const doc = new DOMParser().parseFromString(html, 'text/html');
+                const bodyText = doc.body.textContent || '';
+                const nameWords = gameName.toLowerCase().split(/[\s:\-_]+/).filter(w => w.length > 2);
+
+                const bodyLower = bodyText.toLowerCase();
+                const simpleMatch = nameWords.filter(w => w.length > 3).every(w => bodyLower.includes(w));
+
+                const matches = [];
+                doc.querySelectorAll('a, li, tr, .game, [data-game]').forEach(el => {
+                    const t = (el.textContent || '').trim();
+                    if (t.length < 3 || t.length > 150) return;
+                    const tl = t.toLowerCase();
+                    const score = nameWords.reduce((s, w) => s + (tl.includes(w) ? 1 : 0), 0);
+                    if (score >= Math.max(1, Math.floor(nameWords.length * 0.5))) {
+                        matches.push({ text: t.substring(0, 100), score });
+                    }
+                });
+
+                const seen = new Set();
+                const unique = matches.filter(m => {
+                    const k = m.text.toLowerCase().substring(0, 40);
+                    if (seen.has(k)) return false;
+                    seen.add(k); return true;
+                }).sort((a, b) => b.score - a.score).slice(0, 3);
+
+                return { found: simpleMatch || unique.length > 0, results: unique, error: false };
+            } catch (e) {
+                console.error('Ryuu error:', e);
+                return { found: false, results: [], error: true };
+            }
+        }
+
+        // ===== Online info =====
+        function getOnlineInfo(steamData) {
+            const cats = steamData?.categories || [];
+            const MAP = {
+                1: 'Multijoueur', 36: 'Multijoueur en ligne', 38: 'Coop en ligne',
+                9: 'Coop', 20: 'MMO', 27: 'Cross-Platform Multiplayer',
+                49: 'PvP', 37: 'Multijoueur local', 39: 'Coop locale', 24: 'Écran partagé'
+            };
+            const found = cats.filter(c => MAP[c.id]).map(c => ({ id: c.id, name: MAP[c.id] }));
+            return {
+                hasOnline: found.some(f => [1, 36, 38, 9, 20, 27, 49].includes(f.id)),
+                hasLocal: found.some(f => [37, 39, 24].includes(f.id)),
+                features: found
+            };
+        }
+
+        // ===== DRM Detection =====
+        function getDRMInfo(steamData) {
+            if (!steamData) return { hasDRM: false, drms: [], unknown: true };
+
+            const drms = [];
+            const checkText = [
+                steamData.drm_notice || '',
+                steamData.about_the_game || '',
+                steamData.detailed_description || '',
+                steamData.short_description || '',
+                steamData.legal_notice || ''
+            ].join(' ').toLowerCase();
+
+            const drmPatterns = [
+                { name: 'Denuvo', patterns: ['denuvo'], severity: 'high' },
+                { name: 'Easy Anti-Cheat', patterns: ['easy anti-cheat', 'easyanticheat', 'eac'], severity: 'high' },
+                { name: 'BattlEye', patterns: ['battleye', 'battle eye'], severity: 'high' },
+                { name: 'Vanguard', patterns: ['riot vanguard', 'vanguard anti-cheat'], severity: 'high' },
+                { name: 'VAC', patterns: ['valve anti-cheat', 'vac '], severity: 'medium' },
+                { name: 'Ubisoft Connect', patterns: ['ubisoft connect', 'uplay'], severity: 'medium' },
+                { name: 'EA App', patterns: ['ea app', 'origin', 'ea on the web'], severity: 'medium' },
+                { name: 'Rockstar Launcher', patterns: ['rockstar games launcher', 'rockstar social club'], severity: 'medium' },
+                { name: 'Epic Online Services', patterns: ['epic online services', 'epic games launcher'], severity: 'medium' },
+                { name: 'Bethesda.net', patterns: ['bethesda.net', 'bethesda launcher'], severity: 'medium' },
+                { name: 'Microsoft Account', patterns: ['microsoft account required', 'xbox live'], severity: 'low' },
+                { name: '3rd-party DRM', patterns: ['3rd-party drm', 'third-party drm'], severity: 'medium' },
+                { name: 'SecuROM', patterns: ['securom'], severity: 'high' },
+                { name: 'StarForce', patterns: ['starforce'], severity: 'high' },
+                { name: 'nProtect GameGuard', patterns: ['gameguard', 'nprotect'], severity: 'high' },
+                { name: 'Arxan', patterns: ['arxan'], severity: 'high' },
+            ];
+
+            drmPatterns.forEach(drm => {
+                if (drm.patterns.some(p => checkText.includes(p))) {
+                    drms.push({ name: drm.name, severity: drm.severity });
+                }
+            });
+
+            const hasDrmNotice = !!(steamData.drm_notice && steamData.drm_notice.trim().length > 0);
+
+            return {
+                hasDRM: drms.length > 0 || hasDrmNotice,
+                drms: drms,
+                drmNotice: steamData.drm_notice || '',
+                unknown: false
+            };
+        }
+
+        function esc(s) {
+            if (!s) return '';
+            const d = document.createElement('div');
+            d.textContent = s;
+            return d.innerHTML;
+        }
+
+        // ===== DOM refs =====
+        const searchInput = document.getElementById('searchInput');
+        const searchBtn = document.getElementById('searchBtn');
+        const steamdbBtn = document.getElementById('steamdbBtn');
+        const resultsDiv = document.getElementById('results');
+        const detailPanel = document.getElementById('detailPanel');
+        const loader = document.getElementById('loader');
+        const steamdbModal = document.getElementById('steamdbModal');
+        const modalBody = document.getElementById('modalBody');
+        const modalClose = document.getElementById('modalClose');
+
+        searchInput.addEventListener('keydown', e => { if (e.key === 'Enter') doSearch(); });
+        searchBtn.addEventListener('click', doSearch);
+        steamdbBtn.addEventListener('click', openSteamDBModal);
+        modalClose.addEventListener('click', closeModal);
+        steamdbModal.addEventListener('click', e => {
+            if (e.target === steamdbModal) closeModal();
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && steamdbModal.classList.contains('active')) closeModal();
+        });
+
+        function openSteamDBModal() {
+            const q = searchInput.value.trim();
+            if (q.length < 2) {
+                searchInput.focus();
+                return;
+            }
+
+            const steamdbUrl = 'https://steamdb.info/search/?a=app&q=' + encodeURIComponent(q);
+
+            steamdbModal.classList.add('active');
+            modalBody.innerHTML = `
+        <div class="steamdb-flow">
+            <div class="flow-step">
+                <div class="flow-step-num">1</div>
+                <div class="flow-step-content">
+                    <h4>Ouvre SteamDB dans un nouvel onglet</h4>
+                    <p>SteamDB bloque les iframes et le scraping. Ouvre la recherche dans ton navigateur :</p>
+                    <a href="${steamdbUrl}" target="_blank" rel="noopener" class="btn-primary" id="openSteamDB">
+                        🔗 Ouvrir SteamDB — "${esc(q)}"
+                    </a>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">2</div>
+                <div class="flow-step-content">
+                    <h4>Trouve ton jeu et copie l'URL ou l'App ID</h4>
+                    <p>Sur la page du jeu, l'URL ressemble à : <code>https://steamdb.info/app/<strong>3159330</strong>/</code><br>
+                    Le numéro en gras, c'est l'<strong>App ID</strong>.</p>
+                </div>
+            </div>
+
+            <div class="flow-step">
+                <div class="flow-step-num">3</div>
+                <div class="flow-step-content">
+                    <h4>Colle l'URL ou l'App ID ici</h4>
+                    <div class="appid-input-wrapper">
+                        <input type="text" id="appIdInput" placeholder="Ex: 3159330 ou https://steamdb.info/app/3159330/" autofocus>
+                        <button class="btn-primary" id="loadAppBtn">Analyser →</button>
+                    </div>
+                    <div id="appIdError" class="appid-error"></div>
+                </div>
+            </div>
+        </div>`;
+
+            // Focus + Enter support
+            setTimeout(() => {
+                const input = document.getElementById('appIdInput');
+                if (input) {
+                    input.focus();
+                    input.addEventListener('keydown', e => {
+                        if (e.key === 'Enter') loadAppFromInput();
+                    });
+                }
+                document.getElementById('loadAppBtn').addEventListener('click', loadAppFromInput);
+            }, 50);
+        }
+
+        async function loadAppFromInput() {
+            const input = document.getElementById('appIdInput');
+            const errBox = document.getElementById('appIdError');
+            const val = input.value.trim();
+
+            errBox.textContent = '';
+
+            if (!val) {
+                errBox.textContent = 'Entre un App ID ou une URL SteamDB';
+                return;
+            }
+
+            // Extraire l'App ID
+            let appId = null;
+            const urlMatch = val.match(/\/app\/(\d+)/);
+            const numberMatch = val.match(/^\d+$/);
+
+            if (urlMatch) {
+                appId = urlMatch[1];
+            } else if (numberMatch) {
+                appId = val;
+            } else {
+                errBox.textContent = '❌ Format invalide. Colle l\'URL SteamDB complète ou juste le numéro.';
+                return;
+            }
+
+            // Loader
+            modalBody.innerHTML = `
+        <div class="modal-loader">
+            <div class="spinner"></div>
+            <p>Récupération des infos du jeu (App ID: ${appId})...</p>
+        </div>`;
+
+            // Récupère les infos du jeu via Steam API
+            try {
+                const data = await getSteamDetails(appId);
+
+                if (!data) {
+                    modalBody.innerHTML = `
+                <div class="error-msg">
+                    ❌ Impossible de récupérer les infos pour l'App ID <strong>${appId}</strong>.<br>
+                    Vérifie que l'ID est correct.
+                </div>
+                <div style="text-align:center;margin-top:16px">
+                    <button class="btn-primary" onclick="openSteamDBModal()">← Réessayer</button>
+                </div>`;
+                    return;
+                }
+
+                // Lance l'analyse avec le jeu trouvé
+                closeModal();
+                showDetail({ id: parseInt(appId), name: data.name });
+
+            } catch (e) {
+                modalBody.innerHTML = `
+            <div class="error-msg">
+                ❌ Erreur: ${esc(e.message)}
+            </div>`;
+            }
+        }
+
+        function closeModal() {
+            steamdbModal.classList.remove('active');
+        }
+
+        async function doSearch() {
+            const q = searchInput.value.trim();
+            if (q.length < 2) return;
+
+            resultsDiv.innerHTML = '';
+            detailPanel.style.display = 'none';
+            loader.style.display = 'block';
+
+            try {
+                const games = await searchSteam(q);
+                loader.style.display = 'none';
+
+                if (!games.length) {
+                    resultsDiv.innerHTML = `
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M8 11h6"/>
+                    </svg>
+                    <h3>Aucun jeu trouvé sur Steam</h3>
+                    <p>Essaie le bouton <strong>🔍 SteamDB</strong> pour une recherche plus large</p>
+                </div>`;
+                    return;
+                }
+
+                games.forEach(game => {
+                    const card = document.createElement('div');
+                    card.className = 'game-card';
+                    const img = game.tiny_image ||
+                        'https://cdn.akamai.steamstatic.com/steam/apps/' + game.id + '/capsule_sm_120.jpg';
+                    card.innerHTML = `
+                <img src="${img}" alt="" onerror="this.style.display='none'">
+                <div class="game-info">
+                    <h3>${esc(game.name)}</h3>
+                    <div class="game-meta">ID: ${game.id}${game.price ?
+                            ' • ' + (game.price.final === 0 ? 'Free' : game.price.final / 100 + '€') : ''} <span class="source-tag steam">Steam</span></div>
+                </div>
+                <span class="arrow">→</span>`;
+                    card.onclick = () => showDetail(game);
+                    resultsDiv.appendChild(card);
+                });
+            } catch (e) {
+                loader.style.display = 'none';
+                resultsDiv.innerHTML = `<div class="error-msg">❌ Erreur: ${esc(e.message)}</div>`;
+            }
+        }
+
+        async function showDetail(game) {
+            resultsDiv.innerHTML = '';
+            detailPanel.style.display = 'block';
+            const hdr = 'https://cdn.akamai.steamstatic.com/steam/apps/' + game.id + '/header.jpg';
+
+            detailPanel.innerHTML = `
+        <div class="detail-header">
+            <img class="detail-cover" src="${hdr}" alt="" onerror="this.style.display='none'">
+            <div class="detail-title-section">
+                <h2>${esc(game.name)}</h2>
+                <div class="detail-meta">Steam ID: ${game.id}</div>
+            </div>
+            <button class="back-btn" id="backBtn">← Retour</button>
+        </div>
+        <div class="detail-body">
+            <div id="drmStatus">
+                <div class="status-card drm-loading">
+                    <h4>🛡️ Protection DRM</h4>
+                    <div class="status-indicator">
+                        <div class="spinner-sm"></div>
+                        <span style="color:#6b7280">Analyse des protections...</span>
+                    </div>
+                </div>
+            </div>
+            <div id="steamStatus" style="margin-top:16px"></div>
+            <div class="status-grid" style="margin-top:16px">
+                <div class="status-card" id="ofCard">
+                    <h4>🔧 Online-Fix.me</h4>
+                    <div class="status-indicator">
+                        <div class="spinner-sm"></div>
+                        <span style="color:#6b7280">Recherche...</span>
+                    </div>
+                </div>
+                <div class="status-card" id="ryuuCard">
+                    <h4>⚡ Ryuu Fixes</h4>
+                    <div class="status-indicator">
+                        <div class="spinner-sm"></div>
+                        <span style="color:#6b7280">Recherche...</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+
+            document.getElementById('backBtn').onclick = () => {
+                detailPanel.style.display = 'none';
+                doSearch();
+            };
+
+            getSteamDetails(game.id).then(data => {
+                renderDRMCard(data);
+                renderSteamCard(data, game.id);
+            });
+            searchOnlineFix(game.name).then(r => renderOnlineFixCard(r, game.name));
+            searchRyuuFixes(game.name).then(r => renderRyuuCard(r));
+        }
+
+        function renderSteamCard(steamData, gameId) {
+            const box = document.getElementById('steamStatus');
+            if (!box) return;
+
+            const info = getOnlineInfo(steamData);
+            let color, text;
+            if (info.hasOnline) { color = 'green'; text = 'Oui — Jeu en ligne !'; }
+            else if (info.hasLocal) { color = 'yellow'; text = 'Local uniquement'; }
+            else { color = 'red'; text = 'Solo uniquement'; }
+
+            let tagsHtml = '';
+            if (info.features.length) {
+                tagsHtml = '<div class="categories-tags" style="margin-top:12px">' +
+                    info.features.map(f =>
+                        `<span class="cat-tag ${[1, 36, 38, 9, 20, 27, 49].includes(f.id) ? 'multiplayer' : ''}">${esc(f.name)}</span>`
+                    ).join('') + '</div>';
+            }
+
+            let descHtml = '';
+            if (steamData?.short_description) {
+                descHtml = `<p class="detail-description" style="margin-bottom:16px">${steamData.short_description}</p>`;
+            }
+
+            box.innerHTML = `
+        ${descHtml}
+        <div class="status-card">
+            <h4>🎮 Multijoueur Steam</h4>
+            <div class="status-indicator">
+                <div class="status-dot ${color}"></div>
+                <span class="status-text ${color}">${text}</span>
+            </div>
+            ${tagsHtml}
+            <a href="https://store.steampowered.com/app/${gameId}" target="_blank" rel="noopener" class="status-link">Voir sur Steam →</a>
+            <a href="https://steamdb.info/app/${gameId}/" target="_blank" rel="noopener" class="status-link" style="margin-left:8px">Voir sur SteamDB →</a>
+        </div>`;
+        }
+
+        function renderDRMCard(steamData) {
+            const box = document.getElementById('drmStatus');
+            if (!box) return;
+
+            const drm = getDRMInfo(steamData);
+
+            let color, text, icon;
+            if (!steamData) {
+                color = 'yellow'; text = 'Impossible de vérifier'; icon = '⚠️';
+            } else if (!drm.hasDRM) {
+                color = 'green'; text = 'Aucun DRM détecté'; icon = '✅';
+            } else {
+                const hasHigh = drm.drms.some(d => d.severity === 'high');
+                color = hasHigh ? 'red' : 'yellow';
+                text = hasHigh ? 'DRM lourd détecté !' : 'DRM détecté';
+                icon = hasHigh ? '🔒' : '⚠️';
+            }
+
+            let drmListHtml = '';
+            if (drm.drms.length > 0) {
+                drmListHtml = `
+            <div class="drm-list">
+                ${drm.drms.map(d => `
+                    <span class="drm-tag drm-${d.severity}">
+                        ${d.severity === 'high' ? '🔴' : d.severity === 'medium' ? '🟡' : '🟢'} ${esc(d.name)}
+                    </span>
+                `).join('')}
+            </div>`;
+            }
+
+            let noticeHtml = '';
+            if (drm.drmNotice && drm.drmNotice.trim()) {
+                noticeHtml = `
+            <div class="drm-notice">
+                <strong>📋 Notice Steam :</strong><br>
+                ${esc(drm.drmNotice)}
+            </div>`;
+            }
+
+            let actionHtml = '';
+            const hasDenuvo = drm.drms.some(d => d.name === 'Denuvo');
+
+            if (hasDenuvo) {
+                actionHtml = `
+            <div class="drm-action drm-action-denuvo">
+                <div class="drm-action-icon">🛡️</div>
+                <div class="drm-action-content">
+                    <strong>Ce jeu est protégé par Denuvo</strong>
+                    <p>Pour activer ce jeu, va voir dans mon serveur Discord, dans le salon <code>✅・activation-denuvo</code></p>
+                </div>
+            </div>`;
+            } else if (drm.hasDRM) {
+                actionHtml = `
+            <div class="drm-action drm-action-other">
+                <div class="drm-action-icon">⚡</div>
+                <div class="drm-action-content">
+                    <strong>DRM détecté</strong>
+                    <p>Vérifie s'il existe un fix sur <a href="https://generator.ryuu.lol/fixes" target="_blank" rel="noopener">Ryuu Fixes</a> pour contourner cette protection.</p>
+                </div>
+            </div>`;
+            } else if (!drm.hasDRM && steamData) {
+                noticeHtml += `<div style="color:#6b7280;font-size:0.85em;margin-top:10px">
+            Aucun DRM tiers détecté dans les informations Steam. Le jeu peut quand même utiliser Steamworks (DRM Steam basique).
+        </div>`;
+            }
+
+            box.innerHTML = `
+        <div class="status-card drm-card drm-card-${color}">
+            <h4>🛡️ Protection DRM ${icon}</h4>
+            <div class="status-indicator">
+                <div class="status-dot ${color}"></div>
+                <span class="status-text ${color}">${text}</span>
+            </div>
+            ${drmListHtml}
+            ${actionHtml}
+            ${noticeHtml}
+        </div>`;
+        }
+
+        function renderOnlineFixCard(results, gameName) {
+            const card = document.getElementById('ofCard');
+            if (!card) return;
+
+            if (results === null) {
+                card.innerHTML = `
+            <h4>🔧 Online-Fix.me</h4>
+            <div class="status-indicator">
+                <div class="status-dot yellow"></div>
+                <span class="status-text yellow">Impossible de vérifier</span>
+            </div>
+            <a href="https://online-fix.me/index.php?do=search&subaction=search&story=${encodeURIComponent(gameName)}" target="_blank" rel="noopener" class="status-link">🔍 Chercher manuellement</a>`;
+                return;
+            }
+
+            if (results.length > 0) {
+                card.innerHTML = `
+            <h4>🔧 Online-Fix.me</h4>
+            <div class="status-indicator">
+                <div class="status-dot green"></div>
+                <span class="status-text green">Disponible !</span>
+            </div>
+            ${results.map(r => `
+                <a href="${esc(r.url)}" target="_blank" rel="noopener" class="status-link">
+                    🔗 ${esc(r.title.length > 55 ? r.title.substring(0, 55) + '…' : r.title)}
+                </a>`).join('<br>')}`;
+            } else {
+                card.innerHTML = `
+            <h4>🔧 Online-Fix.me</h4>
+            <div class="status-indicator">
+                <div class="status-dot red"></div>
+                <span class="status-text red">Non trouvé</span>
+            </div>
+            <a href="https://online-fix.me/index.php?do=search&subaction=search&story=${encodeURIComponent(gameName)}" target="_blank" rel="noopener" class="status-link">🔍 Chercher manuellement</a>`;
+            }
+        }
+
+        function renderRyuuCard(data) {
+            const card = document.getElementById('ryuuCard');
+            if (!card) return;
+
+            if (data.error) {
+                card.innerHTML = `
+            <h4>⚡ Ryuu Fixes</h4>
+            <div class="status-indicator">
+                <div class="status-dot yellow"></div>
+                <span class="status-text yellow">Impossible de vérifier</span>
+            </div>
+            <a href="https://generator.ryuu.lol/fixes" target="_blank" rel="noopener" class="status-link">🔍 Vérifier manuellement</a>`;
+            } else if (data.found) {
+                let extras = '';
+                if (data.results.length) {
+                    extras = data.results.map(r =>
+                        `<div style="color:#9ca3af;font-size:0.85em;margin-top:6px">• ${esc(r.text)}</div>`
+                    ).join('');
+                }
+                card.innerHTML = `
+            <h4>⚡ Ryuu Fixes</h4>
+            <div class="status-indicator">
+                <div class="status-dot green"></div>
+                <span class="status-text green">Fix disponible !</span>
+            </div>
+            ${extras}
+            <a href="https://generator.ryuu.lol/fixes" target="_blank" rel="noopener" class="status-link">🔗 Voir sur Ryuu Fixes</a>`;
+            } else {
+                card.innerHTML = `
+            <h4>⚡ Ryuu Fixes</h4>
+            <div class="status-indicator">
+                <div class="status-dot red"></div>
+                <span class="status-text red">Non trouvé</span>
+            </div>
+            <a href="https://generator.ryuu.lol/fixes" target="_blank" rel="noopener" class="status-link">🔍 Vérifier manuellement</a>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
